@@ -15,7 +15,7 @@ const USER = {
   acoes: 15,
   parceiros: 8,
   pontos: 320,
-  email: 'gustavo@email.com',
+  email: 'gustavo.souza@email.com',
   cidade: 'São Paulo – SP',
 };
 
