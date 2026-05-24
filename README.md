@@ -4,44 +4,68 @@
 
 O **Solidarize** é um aplicativo móvel desenvolvido em React Native e Expo que visa conectar pessoas, simplificar processos e promover a solidariedade de forma prática e intuitiva.
 
+O projeto foi desenhado seguindo as melhores práticas de mercado, estruturado com um fluxo profissional de ramificações (*branches*) para suportar testes tanto em ambientes atualizados quanto em dispositivos específicos.
+
 ---
 
 ## 🚀 Funcionalidades & Status do Projeto
 
-O app é focado na experiência do usuário e no uso avançado de recursos nativos do celular. Confira o que já está pronto e o que está por vir:
+O app é focado na experiência do usuário e no uso avançado de recursos nativos do celular. Confira o andamento das etapas:
 
 ### 🌟 Já Funciona (Funcionalidades Nativas):
-* **Câmera Integrada:** Acesso direto à câmera do dispositivo para captura de fotos dentro do fluxo do app.
+* **Câmera Integrada (`fix`):** Correção completa do escopo e tipagem do `cameraRef` utilizando o novo componente `<CameraView>`.
+* **Persistência de Imagens (`feat`):** Integração com o `AsyncStorage`. A foto tirada pelo usuário é gravada no armazenamento interno do celular e não some ao fechar o app.
+* **Geração de QR Code (`feat`):** Emissão de passes e identificação dinâmica utilizando a biblioteca `react-native-qrcode-svg`.
 * **Mapas e Geolocalização:** Visualização de mapas interativos integrada para localização de ações ou pontos de interesse.
-* **Interface e Navegação:** Fluxo completo de telas estruturado e fluido entre os menus.
-* **Componentes Visuais:** Identidade visual e prototipagem prontos para testes de usabilidade.
+* **Interface e Navegação:** Fluxo completo de telas estruturado e fluido utilizando o *React Navigation*.
 
 ### ⏳ Em Desenvolvimento (Próximas Etapas):
-* **Conexão com Banco de Dados:** Integração para persistência de dados em tempo real (salvar fotos e localizações).
+* **Conexão com Banco de Dados:** Migração das persistências locais (como fotos e localizações) para um serviço em tempo real na nuvem.
 * **Autenticação:** Sistema de login e cadastro de usuários seguro.
-* **Regras de Negócio:** Finalização das lógicas internas de funcionamento do app.
+* **Regras de Negócio:** Finalização das lógicas internas e dinâmicas de pontos de recompensa.
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## 🛠️ Tecnologias & Bibliotecas Utilizadas
 
 Este projeto foi construído utilizando as seguintes ferramentas e tecnologias de ponta:
 
 * **[React Native](https://reactnative.dev/):** Framework para construção de aplicativos nativos usando React.
-* **[Expo (SDK 55)](https://expo.dev/):** Plataforma moderna de desenvolvimento e testes de apps nativos em tempo real.
-* **[TypeScript](https://www.typescriptlang.org/):** Supersset do JavaScript que adiciona tipagem estática ao código.
+* **[Expo](https://expo.dev/):** Plataforma moderna de desenvolvimento e testes de apps nativos.
+* **[TypeScript](https://www.typescriptlang.org/):** Supersset do JavaScript que adiciona tipagem estática e segurança ao código.
 * **[React Navigation](https://reactnavigation.org/):** Roteamento e navegação entre telas de forma nativa.
+* **[AsyncStorage](https://react-native-async-storage.github.io/async-storage/):** Armazenamento local de chave-valor para persistência de dados no dispositivo.
+* **[React Native SVG / QR Code](https://github.com/awesomejerry/react-native-qrcode-svg):** Biblioteca para renderização e geração de códigos QR funcionais em formato vetorizado.
 
 ---
 
-## 📦 Como Rodar o Projeto Localmente
+## 🔀 Sistema de Branches & Instalação de Dependências
 
-Siga o passo a passo abaixo para clonar o repositório e executar o app no seu computador:
+Para evitar conflitos de versão do ecossistema Expo e garantir compatibilidade entre o Emulador (PC) e o Celular Físico, o projeto foi dividido em ramificações dedicadas.
 
-### Pré-requisitos
-Antes de começar, você vai precisar do [Node.js](https://nodejs.org/) instalado na sua máquina e do aplicativo **Expo Go** instalado no seu celular (iOS ou Android).
+⚠️ **IMPORTANTE:** Sempre que você mudar de branch (`git checkout`), **você é obrigado a instalar/sincronizar as bibliotecas correspondentes daquela versão** rodando o comando de instalação específico listado abaixo. Sem isso, o projeto dará erro de incompatibilidade de pacotes (`package.json`).
 
-### 1. Clonar o repositório
-```bash
-git clone [https://github.com/SEU_USUARIO/Solidarize.git](https://github.com/SEU_USUARIO/Solidarize.git)
-cd Solidarize
+### 💻 1. Para quem vai rodar na SDK 55 (Computador / Emulador / Dispositivos Atualizados)
+Se você for rodar o projeto utilizando o **Android Studio (PC)** ou recursos mais recentes:
+```cmd
+:: 1. Alterne para a branch do PC
+git checkout sdk55-pc
+
+:: 2. Instale e alinhe as bibliotecas da SDK 55 (Expo 55, React Native 0.78)
+npm install expo@^55.0.0 react-native@0.78.0 --legacy-peer-deps && npx expo install --fix -- --legacy-peer-deps
+
+:: 3. Inicie o servidor limpando o cache
+npx expo start --clear
+
+### 📱 2. Para quem vai rodar na SDK 54 (Celular Físico com Expo Go Antigo)
+Se o seu dispositivo ou ambiente de testes exigir a versão estável anterior do Expo Go:
+
+```cmd
+:: 1. Alterne para a branch do Celular
+git checkout sdk54-celular
+
+:: 2. Instale e alinhe as bibliotecas da SDK 54 (Expo 54, React Native 0.76)
+npm install expo@^54.0.0 react-native@0.76.0 --legacy-peer-deps && npx expo install --fix -- --legacy-peer-deps
+
+:: 3. Inicie o servidor limpando o cache
+npx expo start --clear
