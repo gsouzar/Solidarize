@@ -1,22 +1,35 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Modal, Alert, SafeAreaView, Image
+  TouchableOpacity, Modal, Alert, SafeAreaView, Image, TextInput
 } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const USER = {
-  nome: 'Gustavo de Souza',
-  id: 'GSZ-2024-001',
-  nivel: 'Ouro',
-  acoes: 15,
-  parceiros: 8,
-  pontos: 320,
-  email: 'gustavo.souza@email.com',
-  cidade: 'São Paulo – SP',
+
+interface UserProfile {
+  nome: string;
+  id: string;
+  nivel: string;
+  acoes: number;
+  parceiros: number;
+  pontos: number;
+  email: string;
+  cidade: string;
+}
+
+// Dados iniciais padrão (caso não exista nada salvo)
+const INITIAL_USER: UserProfile = {
+  nome: 'Clique em Editar para Configurar',
+  id: 'GSZ-2026-001',
+  nivel: 'Bronze',
+  acoes: 0,
+  parceiros: 0,
+  pontos: 0,
+  email: 'seu.email@exemplo.com',
+  cidade: 'Sua Cidade - UF',
 };
 
 const HISTORICO = [
@@ -27,33 +40,75 @@ const HISTORICO = [
 ];
 
 export default function Perfil() {
+  // Estados de Controle dos Modais
   const [modalCameraVisivel, setModalCameraVisivel] = useState(false);
+  const [modalPerfilVisivel, setModalPerfilVisivel] = useState(false);
+
+  // Estados dos Dados do Usuário
+  const [user, setUser] = useState<UserProfile>(INITIAL_USER);
+  const [fotoPerfil, setFotoPerfil] = useState<string | null>(null);
+
+  // Estados do Formulário de Edição
+  const [editNome, setEditNome] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editCidade, setEditCidade] = useState('');
+
+  // Câmera
   const [cameraFacing, setCameraFacing] = useState<CameraType>('front');
   const [permission, requestPermission] = useCameraPermissions();
-  
-  // Estado que armazena a foto carregada/tirada
-  const [fotoPerfil, setFotoPerfil] = useState<string | null>(null);
-  
-  // Referência para controlar a ação de disparo da câmera
   const cameraRef = useRef<CameraView>(null);
 
-  const qrValue = `SOLIDARI-PASS::${USER.id}::${USER.nome.replace(/ /g, '_').toUpperCase()}`;
+  const qrValue = `SOLIDARI-PASS::${user.id}::${user.nome.replace(/ /g, '_').toUpperCase()}`;
 
-  // BUSCA A FOTO GRAVADA NO CELULAR LOGO QUANDO O APP ABRE
+  // Carrega a foto e os dados do usuário ao iniciar
   useEffect(() => {
-    const carregarFotoSalva = async () => {
+    const carregarDadosSalvos = async () => {
       try {
         const fotoSalva = await AsyncStorage.getItem('@foto_perfil');
-        if (fotoSalva !== null) {
-          setFotoPerfil(fotoSalva);
+        if (fotoSalva !== null) setFotoPerfil(fotoSalva);
+
+        const usuarioSalvo = await AsyncStorage.getItem('@dados_usuario');
+        if (usuarioSalvo !== null) {
+          setUser(JSON.parse(usuarioSalvo));
         }
       } catch (error) {
-        console.log("Erro ao carregar a foto do armazenamento:", error);
+        console.log("Erro ao carregar dados do armazenamento:", error);
       }
     };
 
-    carregarFotoSalva();
+    carregarDadosSalvos();
   }, []);
+
+  const abrirModalPerfil = () => {
+    setEditNome(user.nome);
+    setEditEmail(user.email);
+    setEditCidade(user.cidade);
+    setModalPerfilVisivel(true);
+  };
+
+  const salvarPerfil = async () => {
+    if (!editNome.trim() || !editEmail.trim() || !editCidade.trim()) {
+      Alert.alert('Campos vazios', 'Por favor, preencha todos os campos.');
+      return;
+    }
+
+    const usuarioAtualizado: UserProfile = {
+      ...user,
+      nome: editNome,
+      email: editEmail,
+      cidade: editCidade,
+      nivel: 'Ouro', 
+    };
+
+    try {
+      await AsyncStorage.setItem('@dados_usuario', JSON.stringify(usuarioAtualizado));
+      setUser(usuarioAtualizado);
+      setModalPerfilVisivel(false);
+      Alert.alert('Sucesso!', 'Perfil atualizado com sucesso.');
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível salvar os dados do perfil.');
+    }
+  };
 
   const abrirCamera = async () => {
     if (!permission) {
@@ -78,20 +133,16 @@ export default function Perfil() {
     setCameraFacing(current => (current === 'back' ? 'front' : 'back'));
   };
 
-  // CAPTURA A FOTO E GRAVA NO ARMAZENAMENTO INTERNO
   const tirarFoto = async () => {
     if (cameraRef.current) {
       try {
-        const opcoes = { quality: 0.5, skipProcessing: true };
-        const foto = await cameraRef.current.takePictureAsync(opcoes);
+        const opciones = { quality: 0.5, skipProcessing: true };
+        const foto = await cameraRef.current.takePictureAsync(opciones);
         
         if (foto && foto.uri) {
-          setFotoPerfil(foto.uri); // Coloca a foto na tela na hora
-          
-          // Grava a foto permanentemente no celular para não sumir ao fechar
+          setFotoPerfil(foto.uri);
           await AsyncStorage.setItem('@foto_perfil', foto.uri); 
-          
-          setModalCameraVisivel(false); // Fecha a câmera
+          setModalCameraVisivel(false);
           Alert.alert('Sucesso!', 'Sua foto de perfil foi salva com sucesso.');
         }
       } catch (error) {
@@ -107,6 +158,12 @@ export default function Perfil() {
     Bronze: '#B45309',
   };
 
+  const getIniciais = (nome: string) => {
+    const partes = nome.trim().split(' ');
+    if (partes.length >= 2) return (partes[0][0] + partes[1][0]).toUpperCase();
+    return nome.slice(0, 2).toUpperCase();
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -118,7 +175,7 @@ export default function Perfil() {
               {fotoPerfil ? (
                 <Image source={{ uri: fotoPerfil }} style={styles.avatarImagem} />
               ) : (
-                <Text style={styles.avatarText}>GS</Text>
+                <Text style={styles.avatarText}>{getIniciais(user.nome)}</Text>
               )}
             </View>
             <View style={styles.avatarCameraBtn}>
@@ -126,16 +183,16 @@ export default function Perfil() {
             </View>
           </TouchableOpacity>
 
-          <Text style={styles.userName}>{USER.nome}</Text>
-          <Text style={styles.userEmail}>{USER.email}</Text>
+          <Text style={styles.userName}>{user.nome}</Text>
+          <Text style={styles.userEmail}>{user.email}</Text>
           <Text style={styles.userCidade}>
-            <Ionicons name="location-outline" size={12} color="#888" /> {USER.cidade}
+            <Ionicons name="location-outline" size={12} color="#888" /> {user.cidade}
           </Text>
 
           <View style={styles.badges}>
-            <View style={[styles.badgeNivel, { backgroundColor: nivelCor[USER.nivel] + '22' }]}>
-              <Ionicons name="trophy" size={13} color={nivelCor[USER.nivel]} />
-              <Text style={[styles.badgeNivelText, { color: nivelCor[USER.nivel] }]}>Membro {USER.nivel}</Text>
+            <View style={[styles.badgeNivel, { backgroundColor: (nivelCor[user.nivel] || '#B45309') + '22' }]}>
+              <Ionicons name="trophy" size={13} color={nivelCor[user.nivel] || '#B45309'} />
+              <Text style={[styles.badgeNivelText, { color: nivelCor[user.nivel] || '#B45309' }]}>Membro {user.nivel}</Text>
             </View>
             <View style={styles.badgeAtivo}>
               <View style={styles.dotAtivo} />
@@ -147,9 +204,9 @@ export default function Perfil() {
         {/* Stats */}
         <View style={styles.statsRow}>
           {[
-            { label: 'Ações', valor: USER.acoes, icone: 'flash', cor: '#E65100' },
-            { label: 'Parceiros', valor: USER.parceiros, icone: 'people', cor: '#0D47A1' },
-            { label: 'Pontos', valor: USER.pontos, icone: 'star', cor: '#F59E0B' },
+            { label: 'Ações', valor: user.acoes, icone: 'flash', cor: '#E65100' },
+            { label: 'Parceiros', valor: user.parceiros, icone: 'people', cor: '#0D47A1' },
+            { label: 'Pontos', valor: user.pontos, icone: 'star', cor: '#F59E0B' },
           ].map((stat) => (
             <View key={stat.label} style={styles.statCard}>
               <Ionicons name={stat.icone as any} size={20} color={stat.cor} />
@@ -162,14 +219,14 @@ export default function Perfil() {
         {/* Card do SOLIDARI-PASS */}
         <View style={styles.passCard}>
           <View style={styles.passHeader}>
-            <View>
+            <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={styles.passLabel}>SOLIDARI-PASS</Text>
-              <Text style={styles.passName}>{USER.nome}</Text>
-              <Text style={styles.passId}>ID: #{USER.id}</Text>
+              <Text style={styles.passName} numberOfLines={1}>{user.nome}</Text>
+              <Text style={styles.passId}>ID: #{user.id}</Text>
             </View>
-            <View style={[styles.passNivelBadge, { backgroundColor: nivelCor[USER.nivel] }]}>
+            <View style={[styles.passNivelBadge, { backgroundColor: nivelCor[user.nivel] || '#B45309' }]}>
               <Ionicons name="trophy" size={14} color="#fff" />
-              <Text style={styles.passNivelText}>{USER.nivel}</Text>
+              <Text style={styles.passNivelText}>{user.nivel}</Text>
             </View>
           </View>
 
@@ -207,13 +264,68 @@ export default function Perfil() {
           ))}
         </View>
 
-        {/* Botão editar perfil */}
+        {/* Botão Editar Perfil Textual */}
+        <TouchableOpacity style={styles.btnEditarDados} onPress={abrirModalPerfil}>
+          <Ionicons name="create-outline" size={18} color="#fff" />
+          <Text style={styles.btnEditarDadosText}>Editar Dados do Perfil</Text>
+        </TouchableOpacity>
+
+        {/* Botão editar foto */}
         <TouchableOpacity style={styles.btnEditar} onPress={abrirCamera}>
           <Ionicons name="camera-outline" size={18} color="#1B5E20" />
           <Text style={styles.btnEditarText}>Atualizar foto de perfil</Text>
         </TouchableOpacity>
 
       </ScrollView>
+
+      {/* MODAL EDITAR / CRIAR PERFIL */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalPerfilVisivel}
+        onRequestClose={() => setModalPerfilVisivel(false)}
+      >
+        <View style={styles.modalCentrado}>
+          <View style={styles.modalPerfilConteudo}>
+            <View style={styles.modalPerfilHeader}>
+              <Text style={styles.modalPerfilTitulo}>Configurar Perfil</Text>
+              <TouchableOpacity onPress={() => setModalPerfilVisivel(false)}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.labelInput}>Nome Completo</Text>
+            <TextInput
+              style={styles.input}
+              value={editNome}
+              onChangeText={setEditNome}
+              placeholder="Ex: Gustavo de Souza"
+            />
+
+            <Text style={styles.labelInput}>E-mail</Text>
+            <TextInput
+              style={styles.input}
+              value={editEmail}
+              onChangeText={setEditEmail}
+              placeholder="Ex: gustavo@email.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+
+            <Text style={styles.labelInput}>Cidade – UF</Text>
+            <TextInput
+              style={styles.input}
+              value={editCidade}
+              onChangeText={setEditCidade}
+              placeholder="Ex: São Paulo – SP"
+            />
+
+            <TouchableOpacity style={styles.btnSalvarPerfil} onPress={salvarPerfil}>
+              <Text style={styles.btnSalvarPerfilText}>Salvar Alterações</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Modal Câmera */}
       <Modal
@@ -226,7 +338,6 @@ export default function Perfil() {
             <>
               <CameraView style={styles.camera} facing={cameraFacing} ref={cameraRef}>
                 <View style={styles.cameraOverlay}>
-                  {/* Botão fechar */}
                   <TouchableOpacity
                     style={styles.cameraFechar}
                     onPress={() => setModalCameraVisivel(false)}
@@ -235,11 +346,8 @@ export default function Perfil() {
                   </TouchableOpacity>
 
                   <Text style={styles.cameraInstrucao}>Posicione seu rosto no centro</Text>
-
-                  {/* Guia oval */}
                   <View style={styles.cameraGuia} />
 
-                  {/* Controles */}
                   <View style={styles.cameraControles}>
                     <TouchableOpacity style={styles.cameraIconBtn} onPress={toggleCamera}>
                       <Ionicons name="camera-reverse-outline" size={28} color="#fff" />
@@ -352,12 +460,21 @@ const styles = StyleSheet.create({
   historicoPontos: { alignItems: 'center' },
   historicoPontosText: { fontSize: 16, fontWeight: '700', color: '#1B5E20' },
   historicoPtLabel: { fontSize: 10, color: '#888' },
+  btnEditarDados: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#1B5E20', borderRadius: 12,
+    paddingVertical: 14, paddingHorizontal: 24, width: '100%', justifyContent: 'center',
+    marginBottom: 10, elevation: 2
+  },
+  btnEditarDadosText: { color: '#fff', fontSize: 15, fontWeight: '600' },
   btnEditar: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     borderWidth: 1.5, borderColor: '#1B5E20', borderRadius: 12,
     paddingVertical: 12, paddingHorizontal: 24, width: '100%', justifyContent: 'center',
   },
   btnEditarText: { color: '#1B5E20', fontSize: 14, fontWeight: '600' },
+  
+  // Estilos da Câmera
   cameraContainer: { flex: 1, backgroundColor: '#000' },
   camera: { flex: 1 },
   cameraOverlay: {
@@ -405,4 +522,65 @@ const styles = StyleSheet.create({
   },
   permissaoBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   permissaoCancelar: { color: '#888', fontSize: 14, marginTop: 16 },
+
+  // Novos Estilos do Modal de Perfil
+  modalCentrado: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)'
+  },
+  modalPerfilConteudo: {
+    width: '90%',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  modalPerfilHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20
+  },
+  modalPerfilTitulo: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111'
+  },
+  labelInput: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#444',
+    marginBottom: 6,
+    marginTop: 10
+  },
+  input: {
+    width: '100%',
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: '#111'
+  },
+  btnSalvarPerfil: {
+    backgroundColor: '#1B5E20',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 24,
+    width: '100%'
+  },
+  btnSalvarPerfilText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700'
+  }
 });
