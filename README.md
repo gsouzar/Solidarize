@@ -45,27 +45,25 @@ Para evitar conflitos de versão do ecossistema Expo e garantir compatibilidade 
 
 ⚠️ **IMPORTANTE:** Sempre que você mudar de branch (`git checkout`), **você é obrigado a instalar/sincronizar as bibliotecas correspondentes daquela versão** rodando o comando de instalação específico listado abaixo. Sem isso, o projeto dará erro de incompatibilidade de pacotes (`package.json`).
 
-### 💻 1. Para quem vai rodar na SDK 55 (Computador / Emulador / Dispositivos Atualizados)
-Se você for rodar o projeto utilizando o **Android Studio (PC)** ou recursos mais recentes:
+### 💻📱 Guia de Execução (Escolha o seu Ambiente)
+
 ```cmd
-:: 1. Alterne para a branch do PC
+:: =========================================================================
+:: OPÇÃO 1: Para quem vai rodar na SDK 55 (Computador / Emulador / Android Studio)
+:: =========================================================================
 git checkout sdk55-pc
-
-:: 2. Instale e alinhe as bibliotecas da SDK 55 (Expo 55, React Native 0.78)
 npm install expo@^55.0.0 react-native@0.78.0 --legacy-peer-deps && npx expo install --fix -- --legacy-peer-deps
-
-:: 3. Inicie o servidor limpando o cache
 npx expo start --clear
 
-### 📱 2. Para quem vai rodar na SDK 54 (Celular Físico com Expo Go Antigo)
-Se o seu dispositivo ou ambiente de testes exigir a versão estável anterior do Expo Go:
-
-```cmd
-:: 1. Alterne para a branch do Celular
+:: =========================================================================
+:: OPÇÃO 2: Para quem vai rodar na SDK 54 (Celular Físico com Expo Go Antigo)
+:: =========================================================================
 git checkout sdk54-celular
-
-:: 2. Instale e alinhe as bibliotecas da SDK 54 (Expo 54, React Native 0.76)
 npm install expo@^54.0.0 react-native@0.76.0 --legacy-peer-deps && npx expo install --fix -- --legacy-peer-deps
-
-:: 3. Inicie o servidor limpando o cache
 npx expo start --clear
+
+```
+
+```
+
+```
