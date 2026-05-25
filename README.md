@@ -1,6 +1,3 @@
-Aqui está o arquivo com os dois tópicos unificados em uma única seção de instruções, mantendo os comandos de ambas as opções bem claros e organizados no mesmo bloco de código:
-
-```markdown
 # 🤝 Solidarize
 
 > ⚠️ **Status do Projeto:** 🛠️ Em desenvolvimento / Projeto Acadêmico
